@@ -1,0 +1,208 @@
+-- ใส่โค้ดนี้ใน LocalScript (เช่น ใน StarterPlayerScripts หรือ StarterGui)
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local playerToolEvent = ReplicatedStorage:WaitForChild("RE"):WaitForChild("PlayerToolEvent")
+
+-- ตัวแปรสถานะ
+local isScriptEnabled = true
+local currentSongId = ""
+
+-- ฟังก์ชันยิง RemoteEvent เล่นเพลง
+local function playMusic(songId)
+    if not isScriptEnabled then return end
+    
+    local args = {
+        "ToolMusicText",
+        tostring(songId),
+        [4] = true
+    }
+    playerToolEvent:FireServer(unpack(args))
+end
+
+-- สร้าง ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ModernMusicUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
+
+-- กรอบหลัก (Main Frame)
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 320, 0, 240)
+mainFrame.Position = UDim2.new(0.5, -160, 0.5, -120)
+mainFrame.BackgroundColor3 = Color3.fromRGB(24, 22, 34)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true -- สามารถลากย้ายตำแหน่งได้
+mainFrame.Parent = screenGui
+
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 18)
+mainCorner.Parent = mainFrame
+
+local mainStroke = Instance.new("UIStroke")
+mainStroke.Color = Color3.fromRGB(60, 55, 80)
+mainStroke.Thickness = 1.5
+mainStroke.Parent = mainFrame
+
+-- แถบ Header
+local header = Instance.new("Frame")
+header.Name = "Header"
+header.Size = UDim2.new(1, -28, 0, 32)
+header.Position = UDim2.new(0, 14, 0, 14)
+header.BackgroundTransparency = 1
+header.Parent = mainFrame
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(0.6, 0, 1, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "🎵 MUSIC PLAYER"
+titleLabel.TextColor3 = Color3.fromRGB(240, 240, 240)
+titleLabel.TextSize = 14
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.Parent = header
+
+-- สวิตช์ เปิด/ปิด สคริปต์
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Name = "ToggleSwitch"
+toggleBtn.Size = UDim2.new(0, 52, 0, 24)
+toggleBtn.Position = UDim2.new(1, -52, 0.5, -12)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(46, 213, 115) -- สีเขียวเปิด
+toggleBtn.Text = ""
+toggleBtn.AutoButtonColor = false
+toggleBtn.Parent = header
+
+local toggleCorner = Instance.new("UICorner")
+toggleCorner.CornerRadius = UDim.new(1, 0)
+toggleCorner.Parent = toggleBtn
+
+local toggleCircle = Instance.new("Frame")
+toggleCircle.Name = "Circle"
+toggleCircle.Size = UDim2.new(0, 18, 0, 18)
+toggleCircle.Position = UDim2.new(1, -21, 0.5, -9)
+toggleCircle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+toggleCircle.BorderSizePixel = 0
+toggleCircle.Parent = toggleBtn
+
+local circleCorner = Instance.new("UICorner")
+circleCorner.CornerRadius = UDim.new(1, 0)
+circleCorner.Parent = toggleCircle
+
+-- สถานะข้อความ
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Size = UDim2.new(1, -28, 0, 20)
+statusLabel.Position = UDim2.new(0, 14, 0, 56)
+statusLabel.BackgroundTransparency = 1
+statusLabel.Text = "สถานะ: พร้อมใช้งาน"
+statusLabel.TextColor3 = Color3.fromRGB(160, 155, 180)
+statusLabel.TextSize = 12
+statusLabel.Font = Enum.Font.GothamMedium
+statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+statusLabel.Parent = mainFrame
+
+-- ช่องพิมพ์ Sound ID
+local inputFrame = Instance.new("Frame")
+inputFrame.Name = "InputFrame"
+inputFrame.Size = UDim2.new(1, -28, 0, 42)
+inputFrame.Position = UDim2.new(0, 14, 0, 86)
+inputFrame.BackgroundColor3 = Color3.fromRGB(35, 32, 50)
+inputFrame.BorderSizePixel = 0
+inputFrame.Parent = mainFrame
+
+local inputCorner = Instance.new("UICorner")
+inputCorner.CornerRadius = UDim.new(0, 10)
+inputCorner.Parent = inputFrame
+
+local inputStroke = Instance.new("UIStroke")
+inputStroke.Color = Color3.fromRGB(55, 50, 75)
+inputStroke.Thickness = 1
+inputStroke.Parent = inputFrame
+
+local idInput = Instance.new("TextBox")
+idInput.Name = "IdInput"
+idInput.Size = UDim2.new(1, -20, 1, 0)
+idInput.Position = UDim2.new(0, 10, 0, 0)
+idInput.BackgroundTransparency = 1
+idInput.Text = ""
+idInput.PlaceholderText = "ใส่ ID เพลงตรงนี้..."
+idInput.PlaceholderColor3 = Color3.fromRGB(110, 105, 130)
+idInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+idInput.TextSize = 13
+idInput.Font = Enum.Font.Gotham
+idInput.ClearTextOnFocus = true -- ล้างข้อความเดิมออกทันทีเมื่อกดคลิก
+idInput.Parent = inputFrame
+
+-- ปุ่มกดเล่นเพลง
+local playBtn = Instance.new("TextButton")
+playBtn.Name = "PlayButton"
+playBtn.Size = UDim2.new(1, -28, 0, 44)
+playBtn.Position = UDim2.new(0, 14, 0, 142)
+playBtn.BackgroundColor3 = Color3.fromRGB(255, 117, 140)
+playBtn.Text = "เล่นเพลง"
+playBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+playBtn.TextSize = 14
+playBtn.Font = Enum.Font.GothamBold
+playBtn.Parent = mainFrame
+
+local playCorner = Instance.new("UICorner")
+playCorner.CornerRadius = UDim.new(0, 12)
+playCorner.Parent = playBtn
+
+-- แสดงผล ID เพลงปัจจุบันที่เล่นอยู่
+local playingText = Instance.new("TextLabel")
+playingText.Size = UDim2.new(1, -28, 0, 20)
+playingText.Position = UDim2.new(0, 14, 0, 198)
+playingText.BackgroundTransparency = 1
+playingText.Text = "กำลังเล่น: ยังไม่มีเพลง"
+playingText.TextColor3 = Color3.fromRGB(130, 125, 150)
+playingText.TextSize = 11
+playingText.Font = Enum.Font.Gotham
+playingText.TextXAlignment = Enum.TextXAlignment.Center
+playingText.Parent = mainFrame
+
+-- ระบบการทำงานของปุ่มเปิด/ปิด (Toggle Switch)
+toggleBtn.MouseButton1Click:Connect(function()
+    isScriptEnabled = not isScriptEnabled
+    
+    local targetCirclePos = isScriptEnabled and UDim2.new(1, -21, 0.5, -9) or UDim2.new(0, 3, 0.5, -9)
+    local targetBgColor = isScriptEnabled and Color3.fromRGB(46, 213, 115) or Color3.fromRGB(80, 80, 95)
+    
+    TweenService:Create(toggleCircle, TweenInfo.new(0.2), {Position = targetCirclePos}):Play()
+    TweenService:Create(toggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = targetBgColor}):Play()
+    
+    if isScriptEnabled then
+        statusLabel.Text = "สถานะ: เปิดใช้งาน"
+        statusLabel.TextColor3 = Color3.fromRGB(46, 213, 115)
+        playBtn.AutoButtonColor = true
+    else
+        statusLabel.Text = "สถานะ: ปิดการทำงาน"
+        statusLabel.TextColor3 = Color3.fromRGB(255, 71, 87)
+        playBtn.AutoButtonColor = false
+    end
+end)
+
+-- ระบบกดปุ่มส่งค่าเล่นเพลง
+playBtn.MouseButton1Click:Connect(function()
+    if not isScriptEnabled then
+        statusLabel.Text = "สถานะ: กรุณาเปิดสวิตช์ก่อนใช้งาน"
+        return
+    end
+    
+    local songId = idInput.Text:match("%d+") -- กรองเฉพาะตัวเลข ID
+    if songId and songId ~= "" then
+        currentSongId = songId
+        playingText.Text = "กำลังเล่น: ID " .. songId
+        statusLabel.Text = "สถานะ: ส่งคำสั่งสำเร็จ"
+        statusLabel.TextColor3 = Color3.fromRGB(46, 213, 115)
+        playMusic(songId)
+    else
+        statusLabel.Text = "สถานะ: กรุณาใส่ ID ให้ถูกต้อง"
+        statusLabel.TextColor3 = Color3.fromRGB(255, 71, 87)
+    end
+end)
